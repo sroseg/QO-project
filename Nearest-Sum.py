@@ -64,4 +64,3 @@ t_span = [0,Tfinal]
 #Y_rk4 = np.zeros((2**N,2**N),dtype=float)
 
 T_final = solve_ivp(RHS,t_span,PsiInit,max_step=0.1)
-
