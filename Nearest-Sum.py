@@ -8,14 +8,14 @@
 
 import numpy as np
 import math
-from scipy import linalg
-from numpy.f2py.crackfortran import endifs
+from scipy.integrate import solve_ivp
+
 
 #Initialization
-S = (13,17,19,110)
+S = (13,17,19,11)
 L = 30
-T = 15
 N = len(S)
+Tfinal = 15
 
 # Prepare the initial Hamiltonian, choose sigma X operator
 sigmaX = np.array([[0,1],[1,0]])
@@ -41,22 +41,27 @@ H0 = -H0 #change signs
 # Prepare the Final Hamiltonian
 matrix_A = np.array([[0,0],[0,1]])
 
-Hf = np.zeros((2**N,2**N), dtype=float)
-Smat = np.array(S)
+Hf = np.zeros((2**N,2**N), dtype=int)
 for k in range(N):
-    Hf += Smat[k]*nqubits(matrix_A,k,N)
+    Hf = Hf + (S[k]*nqubits(matrix_A,k,N))
 
 Hf = Hf - (L * np.eye(2**N))
 Hf = Hf**2
 
-print(Hf)
-
-# Uniform superposition state
+# Preparing the solution for the TDSE
+# Uniform superposition state (initial values)
 PsiInit = 1/math.sqrt(2**N)*np.ones(2**N,dtype=float)
 
-print(PsiInit)
-
 # Schedule function
+S_func = lambda t: 0.5*(1-np.cos(np.pi*t/Tfinal))
 
-#S_func =
+# RHS of the TDSE
+RHS = lambda t,y: -1j*((1-S_func(t))* H0 + S_func(t)*Hf)*y
+
+# Solving the TDSE using solver solve_ivp with default method rk45
+# set time span
+t_span = [0,Tfinal]
+#Y_rk4 = np.zeros((2**N,2**N),dtype=float)
+
+T_final = solve_ivp(RHS,t_span,PsiInit,max_step=0.1)
 
