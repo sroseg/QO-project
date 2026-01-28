@@ -47,7 +47,7 @@ for k in range(N):
 
 Hf = Hf - (L * np.eye(2**N))
 Hf = Hf**2
-
+print(Hf)
 # Preparing the solution for the TDSE
 # Uniform superposition state (initial values)
 PsiInit = 1/math.sqrt(2**N)*np.ones(2**N,dtype=float)
@@ -56,11 +56,26 @@ PsiInit = 1/math.sqrt(2**N)*np.ones(2**N,dtype=float)
 S_func = lambda t: 0.5*(1-np.cos(np.pi*t/Tfinal))
 
 # RHS of the TDSE
-RHS = lambda t,y: -1j*((1-S_func(t))* H0 + S_func(t)*Hf)*y
+Ham = lambda t: (1-S_func(t)) * H0 + S_func(t)*Hf
+RHS = lambda t,y: -1j*Ham(y)
 
 # Solving the TDSE using solver solve_ivp with default method rk45
 # set time span
-t_span = [0,Tfinal]
+t_span = (0.0,float(Tfinal))
 #Y_rk4 = np.zeros((2**N,2**N),dtype=float)
 
-T_final = solve_ivp(RHS,t_span,PsiInit,max_step=0.1)
+ans = solve_ivp(RHS,t_span,PsiInit,
+    t_eval=t_span)
+print(ans.t)
+print(ans.y)
+
+TimeVector = ans.t
+PsiVector = ans.y
+PsiFinal = PsiVector[-1, :]
+print(PsiFinal)
+
+
+
+
+
+
