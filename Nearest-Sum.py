@@ -109,7 +109,7 @@ print("Final norm is", norm)
 
 # plot PsiFinal into a histogram
 x = np.arange(0,N)
-plt.bar(x,np.abs(PsiFinal)**2)
+plt.bar(x,PsiFinalVector)
 plt.show()
 
 
