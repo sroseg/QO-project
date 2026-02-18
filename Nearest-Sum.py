@@ -10,9 +10,8 @@ import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 
-
 #Initialization
-S = [13,17,19,14] #set of numbers to pick from
+S = [13,19,17,14] #set of numbers to pick from
 L = 30 #target number
 n = len(S)
 Tfinal = 200 #duration of the adiabatic evolution
@@ -97,8 +96,17 @@ def convert2bitstream(bitstream,max_index):
     bitstream.reverse()
     return bitstream
 
+print(len(convert2bitstream(PsiFinalVector,max_index)))
 num2str = ' '.join(map(str,convert2bitstream(bitstream,max_index)))
 print("The bitstream is", num2str)
+
+bits = convert2bitstream(PsiFinalVector,max_index)
+new_S = []
+for i in range(n):
+    if bits[i] == 1:
+        new_S.append(S[i])
+
+print("The values are:", new_S)
 
 # Computing for the fidelity which is the maximum value of the final state
 Fid = f"{PsiFinalVector.max():.4%}"
