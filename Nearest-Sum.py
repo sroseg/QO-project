@@ -7,72 +7,110 @@
 # least amount of error compared to the target 'Sum'.
 
 import numpy as np
-import math
 from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
 
 
 #Initialization
-S = (13,17,19,11)
-L = 30
-N = len(S)
-Tfinal = 15
+S = [13,17,19,14] #set of numbers to pick from
+L = 30 #target number
+n = len(S)
+Tfinal = 200 #duration of the adiabatic evolution
 
-# Prepare the initial Hamiltonian, choose sigma X operator
+# dimensions
+N = 2**n
+
+# Prepare the initial Hamiltonian H0, choose sigma X operator
 sigmaX = np.array([[0,1],[1,0]])
 
-H0 = np.zeros((2**N,2**N), dtype=int)
+H0 = np.zeros((N,N), dtype=float)
 
-def nqubits(gate,k,N):
+# This is a function that computes the kronecker product  of a given gate and
+# the identity matrix for the nth qubit
+def nqubits(gate,k,n):
     eye = np.eye(2)
     gates = []
 
-    for i in range(N):
+    for i in range(n):
         gates.append(gate if i == k else eye)
     matrix_result = gates[0]
     for j in gates[1:]:
         matrix_result = np.kron(matrix_result,j)
     return matrix_result
 
-for k in range(N):
-    H0 = H0 + nqubits(sigmaX,k,N)
+for k in range(n):
+    H0 = H0 + nqubits(sigmaX,k,n)
 
 H0 = -H0 #change signs
 
 # Prepare the Final Hamiltonian
 matrix_A = np.array([[0,0],[0,1]])
 
-Hf = np.zeros((2**N,2**N), dtype=int)
-for k in range(N):
-    Hf = Hf + (S[k]*nqubits(matrix_A,k,N))
+Hf = np.zeros((N,N), dtype=float)
+for k in range(n):
+    Hf = Hf + (S[k]*nqubits(matrix_A,k,n))
 
-Hf = Hf - (L * np.eye(2**N))
-Hf = Hf**2
-print(Hf)
+# Encoding the problem to the final Hamiltonian Hf
+Hf = Hf - (L * np.eye(N))
+
+#Square the matrix
+Hf = np.matmul(Hf,Hf)
+
 # Preparing the solution for the TDSE
 # Uniform superposition state (initial values)
-PsiInit = 1/math.sqrt(2**N)*np.ones(2**N,dtype=float)
+PsiInit = 1/np.sqrt(N)*np.ones(N,dtype=complex)
+
 
 # Schedule function
-S_func = lambda t: 0.5*(1-np.cos(np.pi*t/Tfinal))
+def S_func(t):
+    return 0.5*(1-np.cos(np.pi*t/Tfinal))
 
 # RHS of the TDSE
-Ham = lambda t: (1-S_func(t)) * H0 + S_func(t)*Hf
-RHS = lambda t,y: -1j*Ham(y)
+def RHS(t,y):
+    Ham = (1-S_func(t)) * H0 + S_func(t)* Hf
+    Yderiv = np.matmul(Ham,y)
+    return -1j * Yderiv
 
 # Solving the TDSE using solver solve_ivp with default method rk45
 # set time span
 t_span = (0.0,float(Tfinal))
-#Y_rk4 = np.zeros((2**N,2**N),dtype=float)
 
-ans = solve_ivp(RHS,t_span,PsiInit,
-    t_eval=t_span)
-print(ans.t)
-print(ans.y)
+# set absolute and relative tolerances to get the desired accuracy
+sol = solve_ivp(RHS,t_span,PsiInit,atol=1e-5,rtol=1e-5)
 
-TimeVector = ans.t
-PsiVector = ans.y
-PsiFinal = PsiVector[-1, :]
-print(PsiFinal)
+# Storing the final values
+PsiFinal = sol.y[:,-1]
+PsiFinalVector = np.abs(PsiFinal)**2
+
+max_index = round(PsiFinalVector.argmax()) #rounding off to force int values
+
+# This is a function to convert the index of the final state into a bitstream
+def convert2bitstream(bitstream,max_index):
+
+    bitstream = []
+
+    while max_index > 0:
+        number = max_index % 2
+        bitstream.append(number)
+        max_index = max_index // 2 # floor division
+
+    bitstream.reverse()
+    return bitstream
+
+num2str = ' '.join(map(str,convert2bitstream(bitstream,max_index)))
+print("The bitstream is", num2str)
+
+# Computing for the fidelity which is the maximum value of the final state
+Fid = f"{PsiFinalVector.max():.4%}"
+print("Fidelity is", Fid)
+# Check the norm conservation
+norm = f"{np.linalg.norm(PsiFinalVector): .4%}"
+print("Final norm is", norm)
+
+# plot PsiFinal into a histogram
+x = np.arange(0,N)
+plt.bar(x,np.abs(PsiFinal)**2)
+plt.show()
 
 
 

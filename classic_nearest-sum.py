@@ -7,19 +7,19 @@ from itertools import combinations
 # is the nearest to the target L
 
 #initialization
-S = (13,17,19,11)
+S = (13,17,19,14)
 L = 30
 sub_S = []
+n = len(S)
 
 # list all subsets of set S
-comb_len1 = list(combinations(S, 1))
-sub_S.extend(comb_len1)
-comb_len2 = list(combinations(S,2))
-sub_S.extend(comb_len2)
-comb_len3 = list(combinations(S,3))
-sub_S.extend(comb_len3)
-comb_len4 = list(combinations(S,4))
-sub_S.extend(comb_len4)
+
+i = 1
+while i < n+1:
+    comb_len = list(combinations(S, i))
+    sub_S.extend(comb_len)
+    i = i + 1
+
 print("These are the combinations of the set S:")
 print(sub_S)
 
