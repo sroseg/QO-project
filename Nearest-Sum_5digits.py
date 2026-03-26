@@ -9,8 +9,11 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
+import time
 
-import bitstream
+start = time.process_time()
+heavy_task()
+print(f"CPU Time: {time.process_time() - start:.6f} seconds")
 
 #Initialization
 S = [25,19,17,14,13] #set of numbers to pick from
