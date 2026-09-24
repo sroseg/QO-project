@@ -1,4 +1,3 @@
-
 # An attempt to find the optimal distance of the river-crossing problem using 
 # brute force method.
 
@@ -27,7 +26,6 @@ def Sfunc(x,y):
    
 # L = np.sqrt((x_f - x_i)**2 + (y_f - y_i)**2)
 # t = L/v
-# u_vector
 
 def distance(node_i, node_f):
     x_i, y_i = node_i
@@ -49,7 +47,6 @@ def calculate_cost(route):
     total_cost = 0
 
     for i in range(len(route) - 1):
-#        total_cost += distance(route[i], route[i + 1])
         total_cost += time_step(route[i], route[i + 1])
 
     total_cost += time_step((0,int((m+1)/2)), route[0]) 
@@ -60,7 +57,7 @@ def calculate_cost(route):
 
 # Listing all possible routes in a list
 routes = [list(zip(setA, steps))
-    for steps in product(setB, repeat=m)]
+    for steps in product(setB, repeat=n)]
 
 #print(routes[0:15624])
 
@@ -68,7 +65,7 @@ best_route = []
 best_cost = 10000 # big enough number
 
 # Iterative process to calculate routes
-for steps in product(setB, repeat=m):
+for steps in product(setB, repeat=n):
     route = list(zip(setA, steps))
 
     # calculate time costs
@@ -78,7 +75,5 @@ for steps in product(setB, repeat=m):
         best_cost = time_cost
         best_route = route
 
-    
-
-print(best_route)
-
+route_f = [j for i,j in best_route]
+print(route_f)
