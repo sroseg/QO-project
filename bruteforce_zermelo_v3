@@ -1,0 +1,124 @@
+# An attempt to find the optimal distance of the river-crossing problem using 
+# brute force method.
+
+
+import numpy as np
+from itertools import product
+
+# Initialization
+n = 6 # x-axis
+m = 5 # y - axis
+D = 1 # distance from the left bank of the river to the right bank 
+L_y = .15
+dx = D / (n+1)
+dy = L_y / (m-1) 
+
+# List all possible nodes 
+setA = list(range(1,n+1)) 
+setB = list(range(1,m+1))
+
+nodes = list(product(setA, setB))
+
+# Time Costs 
+v = 1 #speed relative to water
+def Sfunc(x,y):
+       return 0.95 * v * np.exp(-(x-.5)**2)
+   
+# L = np.sqrt((x_f - x_i)**2 + (y_f - y_i)**2)
+# t = L/v
+
+
+def time_step(node_i,node_f):
+    x_i= node_i[0]*dx
+    x_f= node_f[0]*dx
+    y_i= node_i[1]*dy - L_y/2
+    y_f = node_f[1]*dy - L_y/2
+    delta = (y_f - y_i) / (x_f - x_i) 
+    S = Sfunc((x_i + x_f)/2, (y_i + y_f)/2)
+    return ((x_f - x_i) * (1 + delta**2)) / (np.sqrt((1+ delta**2) * v**2 - S**2)- delta * S) 
+    
+
+def calculate_cost(route):
+    total_cost = 0
+
+    for i in range(len(route) - 1):
+        total_cost += time_step(route[i], route[i + 1])
+
+    total_cost += time_step((0,int((m+1)/2)), route[0]) #first step
+    total_cost += time_step(route[-1], (n+1,int((m+1)/2)))     #last step
+
+    return total_cost
+    
+def inspect_node(route):
+    node_cost = []
+    sum_cost = 0
+
+    #compute the first node of the route
+    cost = time_step((0, int((m+1)/2)), route[0])
+    node_cost.append(cost)
+    sum_cost += cost
+    
+    #computing iteratively the sequences in the route
+    for i in range(len(route) - 1):
+        cost = time_step(route[i], route[i + 1])
+        node_cost.append(cost)
+        sum_cost += cost
+        
+    #compute the final node of the route
+    cost = time_step(route[-1], (n+1, int((m+1)/2)))
+    sum_cost +=cost
+    node_cost.append(cost)
+
+    return node_cost, sum_cost
+
+# Listing all possible routes in a list
+routes = [list(zip(setA, steps))
+    for steps in product(setB, repeat=n)]
+
+best_route = []
+best_cost = 10000 # big enough number
+best_index = None
+
+# Iterative process to calculate routes
+for index,steps in enumerate(product(setB, repeat=n)):
+    route = list(zip(setA, steps))
+
+    
+    # calculate time costs
+    time_cost = calculate_cost(route)
+    
+    if time_cost < best_cost:
+        best_cost = time_cost
+        best_route = route
+        best_index = index
+        
+route_f = [j for i,j in best_route]
+route_check = inspect_node(best_route)
+
+# This is a function to convert the index of the final state into a bitstream
+def convert2ditstring(best_index, n, m):
+    bitstr = np.zeros((1, n), dtype=int)
+    number = best_index
+
+    for i in range(n):
+        check = number // m**(n-i-1)
+        bitstr[0, i] = check
+        number = number % m**(n-i-1)
+
+    return bitstr
+
+print("The optimal route is:", route_f)
+#print("The total time cost is:", best_cost)
+#print(route_check)
+
+bits_full = convert2ditstring(best_index, n,m)
+bits_item = bits_full[0, :n]      
+
+num2str = ' '.join(map(str, bits_item))
+
+print("The ditstring is", num2str)
+
+
+
+
+
