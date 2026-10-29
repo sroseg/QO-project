@@ -1,0 +1,136 @@
+
+import numpy as np
+from itertools import product
+
+# Initialization
+n = 3 # x-axis
+m = 3 # y - axis
+N = n**m
+D = 1 # distance from the left bank of the river to the right bank 
+L_y = .15
+dx = D / (n+1)
+dy = L_y / (m-1) 
+
+# List all possible nodes 
+setA = list(range(1,n+1)) 
+setB = list(range(1,m+1))
+
+
+v = 1 #speed relative to water
+def Sfunc(x,y):
+        return 0.9 * v * np.exp(-(x-D/np.pi)**2)
+
+    
+# a function that instead of returning a matrix, will return
+# an array of tensor products
+# def nqubits_vector(gate,k,n):
+#     I_vect = [1,1]
+#     gates = []
+
+#     for i in range(n):
+#         gates.append(gate if i == k else I_vect)
+#     kron_result = gates[0]
+#     for j in gates[1:]:
+#         kron_result = np.kron(kron_result,j)
+#     return kron_result
+
+# a function that calculates the time step of each node
+def time_step(node_i,node_f):
+    x_i= node_i[0]*dx
+    x_f= node_f[0]*dx
+    y_i= node_i[1]*dy - L_y/2
+    y_f = node_f[1]*dy - L_y/2
+    delta = (y_f - y_i) / (x_f - x_i) 
+    S = Sfunc((x_i + x_f)/2, (y_i + y_f)/2)
+    return ((x_f - x_i) * (1 + delta**2)) / (np.sqrt((1+ delta**2) * v**2 - S**2)- delta * S) 
+  
+  
+# a function that calculates each route
+def calculate_cost(route):
+    total_cost = 0
+
+    for i in range(len(route) - 1):
+        total_cost += time_step(route[i], route[i + 1])
+
+    total_cost += time_step((0,int((m+1)/2)), route[0]) #first step
+    total_cost += time_step(route[-1], (n+1,int((m+1)/2)))     #last step
+
+    return total_cost
+
+
+
+routes = [list(zip(setA, steps))
+    for steps in product(setB, repeat=n)]
+
+# Iterative process to calculate the time cost of the routes
+Hpdiag = np.zeros(N, dtype=float)
+for index,steps in enumerate(product(setB, repeat=n)):
+    route = list(zip(setA, steps))
+
+    # calculate time costs
+    time_cost = calculate_cost(route)
+    
+    Hpdiag[index]= time_cost
+
+#PsiInit = 1/np.sqrt(N)*np.ones(N,dtype=complex)
+PsiInit = np.zeros(N,dtype=complex) 
+PsiInit[3] = 1
+Psi = PsiInit
+        
+Hpsi = np.zeros(N, dtype=complex)
+#vector_A = np.array([0,1])
+
+for i in range(N):
+    Hpsi[i] = Hpdiag[i]*Psi[i]
+    
+
+def forward_euler(PsiInit,t_f,dt):
+    Psi = PsiInit
+    
+    t= 0
+    while t < t_f:
+        Psi = Psi  - Hpdiag*Psi*dt
+        Psi = Psi/np.sqrt(sum(np.abs(Psi)**2))
+        t += dt
+        
+    
+    return Psi
+
+PsiInit = np.random.rand(N)
+PsiInit = PsiInit/np.sqrt(sum(np.abs(PsiInit)**2))
+t_f = 1
+dt = .001 
+forward_euler(PsiInit,t_f,dt)
+print(Psi)
+
+# This is a function to convert the index of the final state into a bitstream
+def convert2ditstring(index, n, m):
+    bitstr = np.zeros(n, dtype=int)
+    number = index
+
+    for i in range(n):
+        check = number // m**(n-i-1)
+        bitstr[i] = check
+        number = number % m**(n-i-1)
+    bitstr = bitstr + 1    
+        
+    return bitstr
+
+#print("The optimal route is:", route_f)
+#print("The total time cost is:", best_cost)
+#print(route_check)
+
+#bits_full = convert2ditstring(max_index, n,m)
+#bits_item = bits_full[:n]      
+
+
+def convert2index(dits,dim,d):
+    check_index = 0
+    for i in range(dim):
+        check_index += int(dits[i])*d**(dim-1-i)
+        
+    return check_index
+
+#num2str = ' '.join(map(str, bits_item))
+
+#print("The ditstring is", num2str)
